@@ -1,0 +1,511 @@
+<title>CareVS MVP Cost Model</title>
+<style>
+  :root {
+    --ground: #f6f7f9;
+    --surface: #ffffff;
+    --surface-2: #eef1f5;
+    --ink: #171c24;
+    --ink-2: #3d4756;
+    --muted: #626e80;
+    --rule: #d9dfe7;
+    --rule-soft: #e7ebf1;
+    --accent: #a4560a;
+    --accent-soft: #fdf3e6;
+    --s1: #2f6fed;
+    --s2: #b45309;
+    --good: #12734a;
+    --crit: #b02a20;
+    --code-bg: #eef1f5;
+    --chart-surface: #ffffff;
+
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0f1216;
+      --surface: #161b21;
+      --surface-2: #1d232b;
+      --ink: #e6eaf0;
+      --ink-2: #bcc6d3;
+      --muted: #8d99a9;
+      --rule: #2b333d;
+      --rule-soft: #232a33;
+      --accent: #f0a13c;
+      --accent-soft: #241a0e;
+      --s1: #5b8ad9;
+      --s2: #c98428;
+      --good: #4bbd85;
+      --crit: #ee6a5c;
+      --code-bg: #1d232b;
+      --chart-surface: #161b21;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0f1216;
+    --surface: #161b21;
+    --surface-2: #1d232b;
+    --ink: #e6eaf0;
+    --ink-2: #bcc6d3;
+    --muted: #8d99a9;
+    --rule: #2b333d;
+    --rule-soft: #232a33;
+    --accent: #f0a13c;
+    --accent-soft: #241a0e;
+    --s1: #5b8ad9;
+    --s2: #c98428;
+    --good: #4bbd85;
+    --crit: #ee6a5c;
+    --code-bg: #1d232b;
+    --chart-surface: #161b21;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 940px; margin: 0 auto; padding: 64px 28px 96px; }
+
+  .masthead { border-bottom: 2px solid var(--ink); padding-bottom: 26px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.13em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 14px;
+  }
+  h1 {
+    font-size: clamp(30px, 5vw, 44px); line-height: 1.08; letter-spacing: -0.025em;
+    font-weight: 660; margin: 0 0 14px; text-wrap: balance;
+  }
+  .standfirst { font-size: 17.5px; color: var(--ink-2); margin: 0; max-width: 62ch; }
+
+  section { margin-top: 56px; }
+  h2 {
+    font-size: 25px; letter-spacing: -0.018em; font-weight: 640; margin: 0 0 6px;
+    padding-top: 22px; border-top: 1px solid var(--rule); text-wrap: balance;
+  }
+  h3 { font-size: 16.5px; font-weight: 660; margin: 32px 0 8px; }
+  .lede { color: var(--muted); font-size: 15px; margin: 0 0 24px; max-width: 66ch; }
+  p { margin: 0 0 16px; max-width: 68ch; }
+  ul { margin: 0 0 16px; padding-left: 20px; max-width: 68ch; }
+  li { margin-bottom: 7px; }
+
+  code {
+    font-family: var(--mono); font-size: 0.855em; background: var(--code-bg);
+    padding: 0.12em 0.4em; border-radius: 4px; color: var(--ink-2);
+  }
+
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 30px 0 8px; }
+  @media (max-width: 720px) { .tiles { grid-template-columns: 1fr; } }
+  .tile { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 20px; }
+  .tile .label {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+  }
+  .tile .value {
+    font-size: 27px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+  }
+  .tile .unit { font-size: 15px; font-weight: 600; color: var(--muted); margin-left: 3px; }
+  .tile .note { font-size: 12.5px; color: var(--muted); margin-top: 8px; line-height: 1.45; }
+
+  .table-scroll {
+    overflow-x: auto; margin: 22px 0 24px; border: 1px solid var(--rule);
+    border-radius: 10px; background: var(--surface);
+  }
+  table { border-collapse: collapse; width: 100%; font-size: 14.2px; min-width: 540px; }
+  th, td { text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  thead th {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; background: var(--surface-2);
+    border-bottom: 1px solid var(--rule); white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: 13px; white-space: nowrap; }
+  tr.total td { font-weight: 700; background: var(--surface-2); }
+  .dim { color: var(--muted); font-size: 13px; }
+
+  figure {
+    margin: 30px 0 34px; padding: 24px 22px 18px; background: var(--surface);
+    border: 1px solid var(--rule); border-radius: 10px; overflow-x: auto;
+  }
+  figure svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+  figcaption {
+    font-size: 13px; color: var(--muted); margin-top: 16px; padding-top: 14px;
+    border-top: 1px solid var(--rule-soft); max-width: 74ch;
+  }
+  figcaption b { color: var(--ink-2); font-weight: 620; }
+  .legend { display: flex; gap: 20px; flex-wrap: wrap; margin: 0 0 6px 6px; font-size: 13px; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-2); }
+  .swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+
+  .callout {
+    background: var(--accent-soft); border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent); border-radius: 8px;
+    padding: 18px 22px; margin: 26px 0;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout .label {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.11em; text-transform: uppercase;
+    color: var(--accent); display: block; margin-bottom: 7px;
+  }
+
+  .pill {
+    display: inline-block; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.05em;
+    text-transform: uppercase; font-weight: 640; padding: 2.5px 8px; border-radius: 999px;
+    border: 1px solid currentColor; white-space: nowrap;
+  }
+  .pill.in { color: var(--good); }
+  .pill.out { color: var(--muted); }
+
+  footer {
+    margin-top: 66px; padding-top: 22px; border-top: 1px solid var(--rule);
+    font-size: 13px; color: var(--muted);
+  }
+  a { color: var(--s1); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">CareVS · ISB project · MVP costing</p>
+    <h1>What the MVP Actually Costs</h1>
+    <p class="standfirst">
+      A parametric cost model for taking the CareVS proof of concept into real homes — build,
+      per-home hardware, and steady-state running cost. All figures in INR, India 2026.
+    </p>
+  </header>
+
+  <div class="tiles">
+    <div class="tile">
+      <div class="label">One-time build</div>
+      <div class="value">₹0.68–1.7<span class="unit">Cr</span></div>
+      <div class="note">Lean 3-engineer team over 4 months, through to a funded 6-role team over 7 months.</div>
+    </div>
+    <div class="tile">
+      <div class="label">Per home, capex</div>
+      <div class="value">₹20,500</div>
+      <div class="note">Edge device plus install, where the home already has CCTV. ₹32,500 if cameras are new.</div>
+    </div>
+    <div class="tile">
+      <div class="label">Per home, per month</div>
+      <div class="value">₹178</div>
+      <div class="note">Running cost at 5,000 homes. ₹2,870 at a 200-home pilot — the difference is amortisation, not efficiency.</div>
+    </div>
+  </div>
+
+  <section>
+    <h2>What "MVP" means here</h2>
+    <p class="lede">Scope discipline is the single biggest lever on the number, so it is stated first.</p>
+
+    <p>
+      The MVP is the smallest system that can sit in a real home, with a real family and a real
+      caregiver, safely and lawfully. That definition closes every blocking gap in the current POC and
+      deliberately defers everything else.
+    </p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Capability</th><th>In MVP?</th><th>Reasoning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Real authentication &amp; sessions</td><td><span class="pill in">In</span></td><td>The POC trusts a role header. Nothing ships without this.</td></tr>
+          <tr><td>Durable storage + evidence in object store</td><td><span class="pill in">In</span></td><td>In-memory state loses the incident log on restart.</td></tr>
+          <tr><td>Alerts outside the browser (push, SMS, voice)</td><td><span class="pill in">In</span></td><td>A console only helps someone already looking at it.</td></tr>
+          <tr><td>Edge device deployment</td><td><span class="pill in">In</span></td><td>The browser was a stand-in. Production inference runs in the home.</td></tr>
+          <tr><td>DPDP consent, audit, retention</td><td><span class="pill in">In</span></td><td>Legal precondition, not a feature.</td></tr>
+          <tr><td>Detector calibration on real homes</td><td><span class="pill in">In</span></td><td>Thresholds are tuned to one room and one framing today.</td></tr>
+          <tr><td>Behavioural trends (real, not seeded)</td><td><span class="pill out">Deferred</span></td><td>Needs ~4 weeks of data per home before it says anything.</td></tr>
+          <tr><td>Multi-person tracking</td><td><span class="pill out">Deferred</span></td><td>Large model and pipeline change; supervised-crossing works on a flag for now.</td></tr>
+          <tr><td>ABDM / FHIR certification</td><td><span class="pill out">Deferred</span></td><td>Export format exists; certification is a later regulatory track.</td></tr>
+          <tr><td>Multi-region scale-out</td><td><span class="pill out">Deferred</span></td><td>Single-process event bus is adequate to a few thousand homes.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Parameter 1 — Team shape and duration</h2>
+    <p class="lede">Engineering is roughly 80% of the one-time cost, so team shape dominates.</p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Configuration</th><th>Team</th><th class="num">Months</th><th class="num">Cost</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Lean</b><br><span class="dim">Founder leads product; no dedicated design or DevOps</span></td>
+            <td>1 CV/ML · 2 full-stack · 1 mobile</td>
+            <td class="num">4</td>
+            <td class="num">₹53L</td>
+          </tr>
+          <tr>
+            <td><b>Standard</b><br><span class="dim">The realistic plan for a funded pilot</span></td>
+            <td>+ 0.5 DevOps · 0.5 design · 1 lead</td>
+            <td class="num">5</td>
+            <td class="num">₹101L</td>
+          </tr>
+          <tr>
+            <td><b>Comfortable</b><br><span class="dim">Same team with schedule buffer</span></td>
+            <td>Same as Standard</td>
+            <td class="num">7</td>
+            <td class="num">₹142L</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="dim">
+      Fully-loaded annual salaries assumed: CV/ML ₹40L, full-stack ₹30L, mobile ₹28L, DevOps ₹30L,
+      design ₹22L, lead ₹40L — India metro, 2026 — with a 1.25× multiplier for equipment, workspace
+      and tooling.
+    </p>
+
+    <h3>Non-headcount, one-time</h3>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Item</th><th class="num">Cost</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>Calibration dataset</td><td class="num">₹6–12L</td><td>~200 staged falls across ~20 homes, annotated. The largest and most-skipped line.</td></tr>
+          <tr><td>DPDP legal &amp; consent policy</td><td class="num">₹3–6L</td><td>Notice drafting, retention policy, grievance process.</td></tr>
+          <tr><td>Security pentest</td><td class="num">₹3–5L</td><td>One round pre-launch.</td></tr>
+          <tr><td>Cloud &amp; tooling, year 1</td><td class="num">₹2–4L</td><td>CI, monitoring, error tracking, non-prod environments.</td></tr>
+          <tr><td>App store, certificates, misc</td><td class="num">₹1–2L</td><td></td></tr>
+          <tr class="total"><td>Subtotal</td><td class="num">₹15–29L</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="label">One-time total</span>
+      <p>
+        <b>₹68 lakh to ₹1.7 crore</b> depending on team shape and duration. For reference, Khalil et al.
+        cite <b>$500K–$1M</b> (roughly ₹4.4–8.8 Cr) to build a single AI "digital teammate" use case.
+        CareVS lands 3–10× below that, and the reason is architectural: there is no LLM in the detection
+        path, so there is no inference bill, no evaluation harness, and no hallucination-mitigation
+        engineering to fund.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Parameter 2 — Hardware per home</h2>
+    <p class="lede">The "reuse existing CCTV" premise is worth ₹12,000 a home.</p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Line item</th><th class="num">A · Existing CCTV</th><th class="num">B · New cameras</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Edge device <span class="dim">(Pi 5 + Hailo-8L, or N100 mini-PC)</span></td><td class="num">₹18,000</td><td class="num">₹18,000</td></tr>
+          <tr><td>IP cameras × 3</td><td class="num">—</td><td class="num">₹10,500</td></tr>
+          <tr><td>Cabling &amp; mounting</td><td class="num">—</td><td class="num">₹4,000</td></tr>
+          <tr><td>Install &amp; configuration labour</td><td class="num">₹2,500</td><td class="num">—</td></tr>
+          <tr class="total"><td>Capex per home</td><td class="num">₹20,500</td><td class="num">₹32,500</td></tr>
+          <tr><td>Amortised over 36 months</td><td class="num">₹569/mo</td><td class="num">₹903/mo</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      A Raspberry Pi 5 with a Hailo-8L accelerator comfortably runs MoveNet Lightning across three
+      streams at 8 fps, which is what the detector needs. A Jetson Orin Nano would roughly double the
+      device cost and buys headroom the MVP does not use — worth revisiting only when multi-person
+      tracking is in scope.
+    </p>
+  </section>
+
+  <section>
+    <h2>Parameter 3 — Fleet size</h2>
+    <p class="lede">Per-home running cost is dominated by fixed costs, so it falls steeply with scale.</p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Homes</th><th class="num">Cloud</th><th class="num">Support</th>
+            <th class="num">Eng. maintenance</th><th class="num">Alerts</th><th class="num">Total /home/mo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>200 <span class="dim">pilot</span></td><td class="num">₹180</td><td class="num">₹188</td><td class="num">₹2,500</td><td class="num">₹2</td><td class="num">₹2,870</td></tr>
+          <tr><td>1,000</td><td class="num">₹65</td><td class="num">₹62</td><td class="num">₹500</td><td class="num">₹2</td><td class="num">₹630</td></tr>
+          <tr><td>5,000</td><td class="num">₹29</td><td class="num">₹47</td><td class="num">₹100</td><td class="num">₹2</td><td class="num">₹178</td></tr>
+          <tr><td>25,000</td><td class="num">₹21</td><td class="num">₹31</td><td class="num">₹20</td><td class="num">₹2</td><td class="num">₹74</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Two things stand out. First, <b>engineering maintenance dominates at pilot scale</b> — two
+      retained engineers spread across 200 homes is ₹2,500 per home per month, nine times everything
+      else combined. A pilot is not a business; it is a fixed cost divided by a small number.
+    </p>
+    <p>
+      Second, <b>alert delivery is negligible</b> at roughly ₹2 per home per month. Push is free, SMS
+      is a fallback, and voice escalation is rare. The instinct to worry about messaging cost is
+      misplaced here.
+    </p>
+  </section>
+
+  <section>
+    <h2>Why edge inference is the cost decision</h2>
+    <p class="lede">The same product with cloud-side inference costs 18–42× more to run at scale.</p>
+
+    <figure>
+      <div class="legend">
+        <span><span class="swatch" style="background: var(--s1)"></span> Edge inference <span class="dim">(as built)</span></span>
+        <span><span class="swatch" style="background: var(--s2)"></span> Cloud-side inference</span>
+      </div>
+      <svg viewBox="0 0 860 350" role="img" aria-label="Line chart of running cost per home per month against fleet size, on a logarithmic cost axis. Edge inference falls steeply from 2,870 rupees at 200 homes to 74 rupees at 25,000 homes. Cloud-side inference falls only from 5,770 to 3,133 rupees, flattening because GPU inference is a marginal cost that never amortises.">
+        <defs>
+          <clipPath id="plot"><rect x="86" y="16" width="712" height="282"/></clipPath>
+        </defs>
+
+        <g stroke="currentColor" opacity="0.13" stroke-width="1">
+          <line x1="86" y1="290" x2="798" y2="290"/>
+          <line x1="86" y1="201" x2="798" y2="201"/>
+          <line x1="86" y1="113" x2="798" y2="113"/>
+          <line x1="86" y1="24"  x2="798" y2="24"/>
+        </g>
+        <g font-size="11.5" fill="currentColor" opacity="0.62" text-anchor="end" font-variant-numeric="tabular-nums">
+          <text x="74" y="294">₹10</text>
+          <text x="74" y="205">₹100</text>
+          <text x="74" y="117">₹1,000</text>
+          <text x="74" y="28">₹10,000</text>
+        </g>
+
+        <g font-size="11.5" fill="currentColor" opacity="0.62" text-anchor="middle" font-variant-numeric="tabular-nums">
+          <text x="110" y="312">200</text>
+          <text x="330" y="312">1,000</text>
+          <text x="551" y="312">5,000</text>
+          <text x="772" y="312">25,000</text>
+        </g>
+        <text x="442" y="338" font-size="12" fill="currentColor" opacity="0.62" text-anchor="middle">Homes in fleet</text>
+
+        <g clip-path="url(#plot)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="110,46 330,64 551,69 772,70" stroke="var(--s2)" stroke-width="2"/>
+          <polyline points="110,72 330,130 551,178 772,212" stroke="var(--s1)" stroke-width="2"/>
+        </g>
+
+        <g>
+          <circle cx="110" cy="46" r="4.5" fill="var(--s2)" stroke="var(--chart-surface)" stroke-width="2"/>
+          <circle cx="330" cy="64" r="4.5" fill="var(--s2)" stroke="var(--chart-surface)" stroke-width="2"/>
+          <circle cx="551" cy="69" r="4.5" fill="var(--s2)" stroke="var(--chart-surface)" stroke-width="2"/>
+          <circle cx="772" cy="70" r="4.5" fill="var(--s2)" stroke="var(--chart-surface)" stroke-width="2"/>
+
+          <circle cx="110" cy="72" r="4.5" fill="var(--s1)" stroke="var(--chart-surface)" stroke-width="2"/>
+          <circle cx="330" cy="130" r="4.5" fill="var(--s1)" stroke="var(--chart-surface)" stroke-width="2"/>
+          <circle cx="551" cy="178" r="4.5" fill="var(--s1)" stroke="var(--chart-surface)" stroke-width="2"/>
+          <circle cx="772" cy="212" r="4.5" fill="var(--s1)" stroke="var(--chart-surface)" stroke-width="2"/>
+        </g>
+
+        <text x="762" y="60" font-size="12.5" font-weight="700" fill="var(--s2)" text-anchor="end" font-variant-numeric="tabular-nums">₹3,133</text>
+        <text x="762" y="232" font-size="12.5" font-weight="700" fill="var(--s1)" text-anchor="end" font-variant-numeric="tabular-nums">₹74</text>
+        <text x="124" y="40" font-size="12" fill="currentColor" opacity="0.7" font-variant-numeric="tabular-nums">₹5,770</text>
+        <text x="124" y="90" font-size="12" fill="currentColor" opacity="0.7" font-variant-numeric="tabular-nums">₹2,870</text>
+      </svg>
+      <figcaption>
+        <b>Running cost per home per month, log scale.</b> The edge curve falls because almost all of its
+        cost is fixed and divides across the fleet. The cloud curve flattens near ₹3,000 because GPU
+        inference is a <i>marginal</i> cost — every additional home adds another continuous inference
+        workload, so it never amortises. Assumes one T4-class GPU serving ~12 homes at 3 streams × 8 fps.
+      </figcaption>
+    </figure>
+
+    <p>
+      This is the most consequential architectural decision in the system, and it was made for privacy
+      reasons — raw video never leaves the home. The cost advantage is a by-product. It is worth saying
+      in that order, because it means the privacy position does not have to be defended on cost grounds,
+      and the cost position does not have to be defended on privacy grounds.
+    </p>
+  </section>
+
+  <section>
+    <h2>What moves the number most</h2>
+    <p class="lede">Sensitivity, ranked. The top three are worth arguing about; the bottom two are not.</p>
+
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Lever</th><th class="num">Swing</th><th>What it changes</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><b>Team shape &amp; duration</b></td>
+            <td class="num">±₹90L</td>
+            <td>Lean 4-month vs comfortable 7-month is the entire spread of the one-time cost.</td>
+          </tr>
+          <tr>
+            <td><b>Fleet size at steady state</b></td>
+            <td class="num">39×</td>
+            <td>₹2,870 vs ₹74 per home per month between a 200-home pilot and 25,000 homes.</td>
+          </tr>
+          <tr>
+            <td><b>Inference location</b></td>
+            <td class="num">18–42×</td>
+            <td>Edge vs cloud on running cost. Already decided, but it is why the unit economics work.</td>
+          </tr>
+          <tr>
+            <td><b>Existing CCTV or not</b></td>
+            <td class="num">₹12,000</td>
+            <td>Per home, one-time. Also the core adoption claim — nothing to wear, nothing new to learn.</td>
+          </tr>
+          <tr>
+            <td><b>Edge device tier</b></td>
+            <td class="num">₹22,000</td>
+            <td>Pi 5 + accelerator vs Jetson Orin. Only matters once multi-person tracking is in scope.</td>
+          </tr>
+          <tr>
+            <td><b>Alert volume</b></td>
+            <td class="num">&lt; ₹15</td>
+            <td>Per home per month, even at 4× the assumed rate. Not a real lever.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Assumptions and what would break them</h2>
+    <p class="lede">Stated so the model can be argued with rather than trusted.</p>
+
+    <ul>
+      <li><b>Connectivity is free.</b> The model assumes the household already has reliable broadband. The Health Affairs summit named rural broadband as an unresolved obstacle; where it fails, the edge device needs local buffering and an LTE fallback — add roughly ₹350–600 per home per month.</li>
+      <li><b>Salaries are India-metro 2026.</b> A tier-2 city team runs 25–35% lower. Hiring a CV specialist may take longer than the build allows, which is a schedule risk before it is a cost risk.</li>
+      <li><b>Three camera streams per home.</b> More rooms means a larger edge device, or a second one.</li>
+      <li><b>36-month hardware life.</b> Consumer-grade single-board computers in Indian summer heat may not reach it. A 24-month assumption raises the amortised figure by half.</li>
+      <li><b>No clinical validation study.</b> The MVP includes calibration, not evidence of outcomes. A proper validation trial is ₹25–50L and belongs to the next phase — but it is what any payer or hospital partner will eventually ask for.</li>
+      <li><b>No field-service network.</b> Costed as install labour only. At scale, device failure and re-siting need a service model this model does not contain.</li>
+      <li><b>Customer acquisition excluded entirely.</b> Sales, marketing and channel are out of scope here. In this category they are frequently larger than the technology cost.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="label">The honest headline</span>
+      <p>
+        Building it is not the hard part. <b>₹68L–₹1.7 Cr</b> is a modest engineering programme, and unit
+        economics at ₹74–178 per home per month are comfortable against any plausible subscription price.
+        The binding constraints are the ones all three sources converge on — whether families adopt it,
+        whether caregivers keep responding to it, and whether it can be shown to change an outcome. None
+        of those are solved by spending more on the build.
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    Figures are modelled estimates for planning discussion, not quotations. Salary, hardware and cloud
+    rates are India 2026 assumptions and should be re-based before use in a budget. Literature benchmark
+    from Khalil, Ahmad &amp; Ali (2026), IEEE Open Journal of the Computer Society.
+  </footer>
+
+</div>
